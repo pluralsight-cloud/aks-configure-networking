@@ -1,0 +1,30 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: api
+  namespace: globalmanticsbooks
+  annotations:
+    alb.networking.azure.io/alb-namespace: alb-infrastructure
+    alb.networking.azure.io/alb-name: alb
+spec:
+  gatewayClassName: azure-alb-external
+  listeners:
+  - name: http-listener
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api
+  namespace: globalmanticsbooks
+spec:
+  parentRefs:
+  - name: api
+  rules:
+  - backendRefs:
+    - name: api
+      port: 80

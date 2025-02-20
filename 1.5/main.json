@@ -1,0 +1,138 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.32.4.45862",
+      "templateHash": "6878999815691463952"
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "osDiskSizeGB": 128,
+    "agentCount": 1,
+    "agentVMSize": "Standard_D2s_v3",
+    "osTypeLinux": "Linux",
+    "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
+    "roleDefinitionId": {
+      "AcrPull": {
+        "id": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]"
+      },
+      "Contributor": {
+        "id": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-11-01-preview",
+      "name": "[format('cr{0}', variables('uniqueSuffix'))]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "anonymousPullEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.ContainerService/managedClusters",
+      "apiVersion": "2024-06-02-preview",
+      "name": "[format('aks-{0}', variables('uniqueSuffix'))]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayname": "AKS Cluster"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "enableRBAC": true,
+        "dnsPrefix": "[format('aks-{0}', variables('uniqueSuffix'))]",
+        "networkProfile": {
+          "networkPlugin": "azure"
+        },
+        "agentPoolProfiles": [
+          {
+            "name": "syspool",
+            "osDiskSizeGB": "[variables('osDiskSizeGB')]",
+            "count": "[variables('agentCount')]",
+            "vmSize": "[variables('agentVMSize')]",
+            "osType": "[variables('osTypeLinux')]",
+            "type": "VirtualMachineScaleSets",
+            "mode": "System"
+          }
+        ],
+        "ingressProfile": {
+          "webAppRouting": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-10-01-preview",
+      "scope": "[format('Microsoft.ContainerRegistry/registries/{0}', format('cr{0}', variables('uniqueSuffix')))]",
+      "name": "[guid(resourceGroup().id, format('cr{0}', variables('uniqueSuffix')), format('aks-{0}', variables('uniqueSuffix')), 'ACRPull')]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', format('aks-{0}', variables('uniqueSuffix'))), '2024-06-02-preview').identityProfile.kubeletidentity.objectId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('roleDefinitionId').AcrPull.id]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerService/managedClusters', format('aks-{0}', variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('cr{0}', variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "DeploymentScriptIdentity",
+      "location": "[variables('location')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScriptIdentity'), resourceGroup().id, 'Contributor')]",
+      "properties": {
+        "description": "Managed identity role assignment",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScriptIdentity'), '2018-11-30').principalId]",
+        "roleDefinitionId": "[variables('roleDefinitionId').Contributor.id]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScriptIdentity')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "name": "ds-deploymentscript",
+      "location": "[variables('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScriptIdentity'))]": {}
+        }
+      },
+      "kind": "AzureCLI",
+      "properties": {
+        "forceUpdateTag": "1",
+        "azCliVersion": "2.9.1",
+        "scriptContent": "    # Install kubectl\n    curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\"\n    chmod +x kubectl\n    mv kubectl /usr/local/bin/\n    RG=$(az group list --query [].name --output tsv)\n    AKS=$(az aks list --resource-group $RG --query [].name --output tsv)\n    ACR=$(az acr list --resource-group $RG --query [].name --output tsv)\n    ACR_LOGIN_SERVER=$(az acr show --name $ACR --query loginServer --output tsv)\n    # Build the Container Images\n    git clone https://github.com/WayneHoggett-ACG/GlobalmanticsBooks\n    cd GlobalmanticsBooks\n    cd api\n    az acr build --registry $ACR --image api:v1 .\n    cd ../web\n    az acr build --registry $ACR --image web:v1 .\n    # Connect to the AKS cluster\n    az aks get-credentials --resource-group $RG --name $AKS\n    # Create the Namespace and Application\n    kubectl create namespace globalmanticsbooks --save-config\n    kubectl config set-context --current --namespace=globalmanticsbooks\n    kubectl create deployment web --image=$ACR_LOGIN_SERVER/web:v1 --namespace globalmanticsbooks --replicas=1 --port=80\n    kubectl create deployment api --image=$ACR_LOGIN_SERVER/api:v1 --namespace globalmanticsbooks --replicas=1 --port=5000\n    kubectl expose deployment/api --port=80 --target-port=5000\n    kubectl set env deployment/web BOOKS_API_URL=http://api\n    kubectl expose deployment/web --port=80 --target-port=80\n    # Create an Ingress for the web app\n    kubectl create ingress web --rule=\"/=web:80\" --class=webapprouting.kubernetes.azure.com\n    # Patch in the pathType to Prefix\n    kubectl patch ingress web --type='json' -p='[{\"op\": \"add\", \"path\": \"/spec/rules/0/http/paths/0/pathType\", \"value\": \"Prefix\"}]'\n    ",
+        "supportingScriptUris": [],
+        "timeout": "PT30M",
+        "cleanupPreference": "OnSuccess",
+        "retentionInterval": "PT1H"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerService/managedClusters', format('aks-{0}', variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('cr{0}', variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScriptIdentity')]"
+      ]
+    }
+  ]
+}

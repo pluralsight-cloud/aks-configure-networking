@@ -1,0 +1,9 @@
+{
+    "$schema": "https://aka.ms/azure-quickstart-templates-metadata-schema#",
+    "type": "QuickStart",
+    "itemDisplayName": "Demo: 1.2 Configuring Kubernetes Services",
+    "description": "",
+    "summary": "This template creates an AKS Cluster and a Container Registry",
+    "githubUsername": "WayneHoggett-ACG",
+    "dateUpdated": "2025-01-22"
+  }
