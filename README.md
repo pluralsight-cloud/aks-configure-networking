@@ -60,6 +60,12 @@ To follow along in this demo using the Cloud Playground Sandbox, follow these st
 1. Deploy the template.
 1. Follow-along with the demo.
 
+#### Additional Learning Material
+
+**Note**: To implement some of the functionality in these additional links, you might require your own Azure subscription.
+
+- [Set up a custom domain name and SSL certificate with the application routing add-on](https://learn.microsoft.com/azure/aks/app-routing-dns-ssl)
+
 ### Clip 5 - Demo: Configuring App Gateway for Containers
 
 1. To follow along with this demonstration you will need your own subscription.
