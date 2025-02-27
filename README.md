@@ -68,6 +68,8 @@ To follow along in this demo using the Cloud Playground Sandbox, follow these st
 
 ### Clip 5 - Demo: Configuring App Gateway for Containers
 
+- [Additional files](./1.5/)
+
 1. To follow along with this demonstration you will need your own subscription.
 1. Log in to the Azure Portal.
 1. Open **Cloud Shell** using **Bash** and set the subscription you'd like to use:
@@ -94,6 +96,13 @@ To follow along in this demo using the Cloud Playground Sandbox, follow these st
 1. Deploy the template.
 1. Follow-along with the demo.
 
+#### Additional Learning Material
+
+**Note**: To implement some of the functionality in these additional links, you might require your own Azure subscription.
+
+- [SSL offloading with Application Gateway for Containers - Gateway API](https://learn.microsoft.com/azure/application-gateway/for-containers/how-to-ssl-offloading-gateway-api?tabs=alb-managed)
+- [Cert-manager and Let's Encrypt with Application Gateway for Containers - Gateway API](https://learn.microsoft.com/azure/application-gateway/for-containers/how-to-cert-manager-lets-encrypt-gateway-api?tabs=alb-managed)
+
 ## Module 2
 
 ### Clip 1 - Securing Pod Traffic with Network Policies
@@ -103,6 +112,8 @@ To follow along in this demo using the Cloud Playground Sandbox, follow these st
 - [Secure traffic between pods by using network policies in AKS](https://learn.microsoft.com/azure/aks/use-network-policies)
 
 ### Clip 2 - Demo: Enable and Configure Network Policies
+
+- [Additional files](./2.2/)
 
 To follow along in this demo using the Cloud Playground Sandbox, follow these steps:
 
