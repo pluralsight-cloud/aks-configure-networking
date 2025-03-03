@@ -100,6 +100,8 @@ To follow along in this demo using the Cloud Playground Sandbox, follow these st
 
 **Note**: To implement some of the functionality in these additional links, you might require your own Azure subscription.
 
+- [Step 1 - Deploy Application Gateway for Containers ALB Controller](https://learn.microsoft.com/azure/application-gateway/for-containers/quickstart-deploy-application-gateway-for-containers-alb-controller?tabs=install-helm-windows)
+- [Step 2 - Create Application Gateway for Containers managed by ALB Controller](https://learn.microsoft.com/azure/application-gateway/for-containers/quickstart-create-application-gateway-for-containers-managed-by-alb-controller?tabs=new-subnet-aks-vnet)
 - [SSL offloading with Application Gateway for Containers - Gateway API](https://learn.microsoft.com/azure/application-gateway/for-containers/how-to-ssl-offloading-gateway-api?tabs=alb-managed)
 - [Cert-manager and Let's Encrypt with Application Gateway for Containers - Gateway API](https://learn.microsoft.com/azure/application-gateway/for-containers/how-to-cert-manager-lets-encrypt-gateway-api?tabs=alb-managed)
 
